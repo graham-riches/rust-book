@@ -13,6 +13,8 @@ fn main() {
     println!("{}", &s4[0..index]);
     let first_word = find_first_word_as_slice(&s4);
     println!("{}", first_word);
+    first_word_using_builtins(&s4);
+    println!("{}", first_word_using_builtins(&s4));
 }
 
 fn takes_ownership(some_string: String) {
@@ -54,4 +56,12 @@ fn find_first_word_as_slice(s: &String) -> &str {
         }
     }
     &s[..]
+}
+
+fn first_word_using_builtins(s: &String) -> &str{
+    let first_word = s
+        .split_whitespace()
+        .next()
+        .unwrap_or("");
+    first_word          
 }

@@ -1,5 +1,5 @@
-use crate::intcode::instructions::op_code::OpCode;
-use crate::intcode::lexer;
+use crate::int_code::instructions::op_code::OpCode;
+use crate::int_code::lexer;
 
 const OP_CODE_ID: i64 = 99;
 const INSTRUCTION_POINTER_OFFSET: i64 = 1;

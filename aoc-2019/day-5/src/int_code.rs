@@ -4,7 +4,7 @@ pub mod parameters;
 
 use num_traits::FromPrimitive;
 
-use crate::intcode::instructions::{
+use crate::int_code::instructions::{
     op_code::{OpCode, OpCodeId, Operation},
     add::Add,
     multiply::Multiply,
@@ -23,11 +23,11 @@ use std::{
     path::Path,
 };
 
-/// Loads an intcode program from a file path
+/// Loads an int_code program from a file path
 /// 
 /// # Examples
 /// ```
-/// let program = intcode::load_program_from_file("file.txt").expect("Could not load program");
+/// let program = int_code::load_program_from_file("file.txt").expect("Could not load program");
 /// ```
 pub fn load_program_from_file(filename: impl AsRef<Path>) -> Result<Vec<i64>, String> {
     let lines = match load_lines_from_file(filename) {
@@ -57,11 +57,11 @@ fn load_lines_from_file(filename: impl AsRef<Path>) -> io::Result<Vec<String>> {
         .collect()
 }
 
-/// Parses an intcode program from a vector of lines that contains an intcode program
+/// Parses an int_code program from a vector of lines that contains an int_code program
 /// 
 /// # Examples
 /// ```
-/// let program = intcode::parse_program_from_lines(vec![1002,4,3,4]);
+/// let program = int_code::parse_program_from_lines(vec![1002,4,3,4]);
 /// ```
 fn parse_program_from_lines(program: &String) -> Vec<i64> {    
     program.split(",")
@@ -69,7 +69,7 @@ fn parse_program_from_lines(program: &String) -> Vec<i64> {
            .collect::<Vec<i64>>()   
 }
 
-/// Run the intcode interpreter with a given input and output
+/// Run the int_code interpreter with a given input and output
 /// 
 /// # Arguments
 /// * `v`      - Slice containing the program data

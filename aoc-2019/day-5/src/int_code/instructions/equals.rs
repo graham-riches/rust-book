@@ -1,28 +1,28 @@
-use crate::intcode::instructions::op_code::OpCode;
-use crate::intcode::lexer;
-use crate::intcode::parameters::ParameterMode;
+use crate::int_code::instructions::op_code::OpCode;
+use crate::int_code::lexer;
+use crate::int_code::parameters::ParameterMode;
 
-const OP_CODE_ID: i64 = 7;
+const OP_CODE_ID: i64 = 8;
 const INSTRUCTION_POINTER_OFFSET: i64 = 4;
 
 #[derive(PartialEq, Debug)]
-pub struct LessThan { 
+pub struct Equals { 
     arg1: lexer::Parameter,
     arg2: lexer::Parameter,
     output: lexer::Parameter
 }
 
-impl OpCode for LessThan {
+impl OpCode for Equals {
     /// Parses an output instruction from a slice of a program
-    fn parse_from_slice(program: &[i64]) -> Option<LessThan> {        
+    fn parse_from_slice(program: &[i64]) -> Option<Equals> {        
         let mut operation = match lexer::parse_instruction_type(program[0]) {
-            Some(lexer::InstructionType{ op_code: OP_CODE_ID, a, b, c}) => LessThan{ arg1: c, arg2: b, output: a},
+            Some(lexer::InstructionType{ op_code: OP_CODE_ID, a, b, c}) => Equals{ arg1: c, arg2: b, output: a},
             Some(_i) => return None,
             None => return None
         };
         operation.arg1.value = program[1];
         operation.arg2.value = program[2];
-        operation.output.value = program[3];        
+        operation.output.value = program[3];                
         Some(operation)
     }
 
@@ -30,7 +30,7 @@ impl OpCode for LessThan {
     fn apply(&self, program: &mut [i64], instruction_pointer: i64, _input: fn() -> i64, _output: fn(i64) -> ()) -> i64 {
         let value_1 = lexer::get_parameter_value(&self.arg1, &program);
         let value_2 = lexer::get_parameter_value(&self.arg2, &program);        
-        if value_1 < value_2 {
+        if value_1 == value_2 {
             program[self.output.value as usize] = 1;
         } else {
             program[self.output.value as usize] = 0;

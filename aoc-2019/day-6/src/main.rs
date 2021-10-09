@@ -1,17 +1,14 @@
-use std::{
-    fs::File,
-    io::{self, BufRead, BufReader},
-    path::Path,
- };
-
+use string_utils::string_utils;
+mod orbits;
 
 fn main() {
-    let program = lines_from_file("data.txt")
-                .unwrap()
-                .map(|x| x.split(")"))
+    // Part 1 Solution:
+    let data = string_utils::read_lines_from_file("data.txt").expect("Could not parse file");
+    let orbit_map = orbits::OrbitMap::from_lines(&data);
+    let count = orbit_map.get_child_orbits("COM", 0);
+    println!("Part one: total orbit count: {}", count);
 
-}
-
-fn lines_from_file(filename: impl AsRef<Path>) -> io::Result<Vec<String>> {
-    BufReader::new(File::open(filename)?).lines().collect()
+    // Part 2 Solution:
+    let result = orbit_map.calculate_orbital_transfers("YOU", "SAN", "COM");
+    println!("Part two: total orbital transfers: {}", result);
 }

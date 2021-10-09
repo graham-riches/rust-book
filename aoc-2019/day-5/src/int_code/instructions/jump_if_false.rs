@@ -1,6 +1,6 @@
-use crate::intcode::instructions::op_code::OpCode;
-use crate::intcode::lexer;
-use crate::intcode::parameters::ParameterMode;
+use crate::int_code::instructions::op_code::OpCode;
+use crate::int_code::lexer;
+use crate::int_code::parameters::ParameterMode;
 
 const OP_CODE_ID: i64 = 6;
 const INSTRUCTION_POINTER_OFFSET: i64 = 3;

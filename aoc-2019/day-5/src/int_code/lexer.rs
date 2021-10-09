@@ -1,4 +1,4 @@
-use crate::intcode::parameters::ParameterMode;
+use crate::int_code::parameters::ParameterMode;
 
 /// Encodes a parameter as well as it's calling type
 #[derive(Debug, PartialEq)]
@@ -7,7 +7,7 @@ pub struct Parameter {
     pub value: i64
 }
 
-/// Encodes an intcode instruction and it's parameter passing modes
+/// Encodes an int_code instruction and it's parameter passing modes
 #[derive(Debug, PartialEq)]
 pub struct InstructionType {
     pub op_code: i64,

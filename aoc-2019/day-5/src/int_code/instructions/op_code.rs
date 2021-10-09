@@ -1,4 +1,4 @@
-use crate::intcode::instructions;
+use crate::int_code::instructions;
 use num_derive::FromPrimitive;
 
 /// Common trait methods that an operation must satisfy

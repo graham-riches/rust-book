@@ -18,10 +18,10 @@ fn main() {
     let file = matches.value_of("INPUT").unwrap();
     let symbol_table = SymbolTable::from_file(file).expect("Could not parse input file as a symbol table");
 
-    let bss = symbol_table.into_iter()
+    let mut bss = symbol_table.into_iter()
         .filter(|x| x.section == ".bss")
         .collect::<SymbolTable>();
-    
+    bss.sort_descending();
     print!("{:?}", bss);
     
 

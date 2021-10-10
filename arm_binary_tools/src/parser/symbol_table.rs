@@ -47,6 +47,16 @@ impl SymbolTable {
         Ok(result)
     }
 
+    /// Helper function to sort the symbol table by symbol size in an ascending manner
+    pub fn sort_ascending(&mut self) -> () {
+        self.0.sort_by(|x, y| x.alignment_or_size.partial_cmp(&y.alignment_or_size).unwrap());
+    }
+
+    /// Helper function to sort the symbol table by symbol size in a descending manner
+    pub fn sort_descending(&mut self) -> () {
+        self.0.sort_by(|x, y| y.alignment_or_size.partial_cmp(&x.alignment_or_size).unwrap());
+    }
+
     /// Gets the maximum length of all names contained in the symbol table
     fn get_max_name_length(&self) -> usize {
         self.iter().map(|x| x.name.len()).max().unwrap()

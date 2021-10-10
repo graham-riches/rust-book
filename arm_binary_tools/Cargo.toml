@@ -1,10 +1,12 @@
 [package]
-name = "day-6"
+name = "arm_binary_tools"
 version = "0.1.0"
 edition = "2018"
+author = "Graham Riches"
+email = "Graham.Riches@live.com"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-derive_more="*"
-string_utils = { path = "../../string_utils"}
+nom = "7.0.0"
+string_utils = {path = "../string_utils"}

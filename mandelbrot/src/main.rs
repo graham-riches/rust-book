@@ -18,10 +18,10 @@ fn main() {
     let upper_left = parse_complex(&args[3]).expect("Could not parse upper left complex type");
     let lower_right = parse_complex(&args[4]).expect("Could not parse lower right complex type");    
 
-    let mut pixels = vec![0; bounds.0 * bounds.1];
+    let mut pixels = vec![0; bounds.0 * bounds.1 * 3];
     {
         let bands: Vec<(usize, &mut [u8])> = pixels
-            .chunks_mut(bounds.0)
+            .chunks_mut(bounds.0 * 3)
             .enumerate()
             .collect();
 
@@ -34,14 +34,6 @@ fn main() {
                 render(band, band_bounds, band_upper_left, band_lower_right);
             });        
     }
-
-    let mut buff = image::ImageBuffer::new(bounds.0 as u32, bounds.1 as u32);
-    for (x, y, pixel) in buff.enumerate_pixels_mut() {
-        let r = (0.3 * x as f32) as u8;
-        let b = (0.3 * y as f32) as u8;
-        *pixel = image::Rgb([r, 0, b]);
-    }
-    buff.save("test.png").unwrap();
     write_image(&args[1], &pixels, bounds).expect("Error writing PNG file");
 }
 
@@ -51,7 +43,7 @@ fn write_image(filename: &str, pixels: &[u8], bounds: (usize, usize)) -> Result<
     encoder.encode(&pixels,
                    bounds.0 as u32,
                    bounds.1 as u32,
-                   ColorType::Gray(8))?;
+                   ColorType::RGB(8))?;
     Ok(())
 }
 
@@ -102,19 +94,34 @@ fn render(pixels: &mut[u8],
           bounds: (usize, usize),
           upper_left: Complex<f64>,
           lower_right: Complex<f64>) {
-    assert_eq!(pixels.len(), bounds.0 * bounds.1);
-
-    for row in 0..bounds.1 {
+    // Chunk should be rows * columns as RBG
+    assert_eq!(pixels.len(), bounds.0 * bounds.1 * 3);        
+    for row in 0..bounds.1 { 
         for column in 0..bounds.0 {
             let p = pixel_to_point(bounds, (column, row), upper_left, lower_right);
-            let rgb_intensity = match escape_time(p, 255) {
-                None => 0,
-                Some(count) => 255 - count as u8
-            };
-            pixels[row * bounds.0 + column] = rgb_intensity;           
+            let color = match escape_time(p, 255) {
+                None => (0, 0, 0),
+                Some(count) => escape_time_to_rgb(255 - count)
+            };           
+            pixels[row * bounds.0 + column * 3] = color.0;           
+            pixels[row * bounds.0 + column * 3 + 1] = color.1;
+            pixels[row * bounds.0 + column * 3 + 2] = color.2;
         }
     }
 }
+
+
+fn escape_time_to_rgb(escape_time: usize) -> (u8, u8, u8) {
+    match escape_time as u32 / 51 {
+        0 => (0xe9, 0xd9, 0x85),
+        1 => (0xb2, 0xbd, 0x7e),
+        2 => (0x74, 0x9c, 0x75),
+        3 => (0x6a, 0x5d, 0x7b),
+        4 => (0x5d, 0x4a, 0x66),        
+        _ => (0xFF, 0xFF, 0xFF)
+    }    
+}
+
 
 
 #[test]

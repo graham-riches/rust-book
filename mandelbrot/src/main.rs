@@ -4,6 +4,7 @@ use image::ColorType;
 use image::png::PNGEncoder;
 use std::fs::File;
 use std::env;
+use rayon::prelude::*;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -15,28 +16,32 @@ fn main() {
 
     let bounds = parse_pair(&args[2], 'x').expect("Could not parse image size");
     let upper_left = parse_complex(&args[3]).expect("Could not parse upper left complex type");
-    let lower_right = parse_complex(&args[4]).expect("Could not parse lower right complex type");
+    let lower_right = parse_complex(&args[4]).expect("Could not parse lower right complex type");    
 
     let mut pixels = vec![0; bounds.0 * bounds.1];
-    
-    let threads = 8;
-    let rows_per_band = bounds.1 / threads + 1;
     {
-        let bands: Vec<&mut [u8]> = pixels.chunks_mut(rows_per_band * bounds.0).collect();
-        crossbeam::scope(|spawner| {
-            for (i, band) in bands.into_iter().enumerate() {
-                let top = rows_per_band * i;
-                let height = band.len() / bounds.0;
-                let band_bounds = (bounds.0, height);
+        let bands: Vec<(usize, &mut [u8])> = pixels
+            .chunks_mut(bounds.0)
+            .enumerate()
+            .collect();
+
+        bands.into_par_iter()
+            .for_each(|(i, band)| {
+                let top = i;
+                let band_bounds = (bounds.0, 1);
                 let band_upper_left = pixel_to_point(bounds, (0, top), upper_left, lower_right);
-                let band_lower_right = pixel_to_point(bounds, (bounds.0, top + height), upper_left, lower_right);
-                spawner.spawn(move |_| {
-                    render(band, band_bounds, band_upper_left, band_lower_right);
-                });
-            }
-        }).unwrap();
+                let band_lower_right = pixel_to_point(bounds, (bounds.0, top + 1), upper_left, lower_right);
+                render(band, band_bounds, band_upper_left, band_lower_right);
+            });        
     }
 
+    let mut buff = image::ImageBuffer::new(bounds.0 as u32, bounds.1 as u32);
+    for (x, y, pixel) in buff.enumerate_pixels_mut() {
+        let r = (0.3 * x as f32) as u8;
+        let b = (0.3 * y as f32) as u8;
+        *pixel = image::Rgb([r, 0, b]);
+    }
+    buff.save("test.png").unwrap();
     write_image(&args[1], &pixels, bounds).expect("Error writing PNG file");
 }
 
@@ -102,11 +107,11 @@ fn render(pixels: &mut[u8],
     for row in 0..bounds.1 {
         for column in 0..bounds.0 {
             let p = pixel_to_point(bounds, (column, row), upper_left, lower_right);
-            pixels[row * bounds.0 + column] = 
-                match escape_time(p, 255) {
-                    None => 0,
-                    Some(count) => 255 - count as u8
-                };
+            let rgb_intensity = match escape_time(p, 255) {
+                None => 0,
+                Some(count) => 255 - count as u8
+            };
+            pixels[row * bounds.0 + column] = rgb_intensity;           
         }
     }
 }

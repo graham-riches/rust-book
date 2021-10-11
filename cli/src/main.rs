@@ -1,4 +1,3 @@
-#[macro_use]
 extern crate clap;
 use clap::{App};
 use arm_binary_tools::parser::symbol_table::SymbolTable;

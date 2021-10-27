@@ -1,50 +1,135 @@
-use std::str::FromStr;
 use num::Complex;
-use image::ColorType;
-use image::png::PNGEncoder;
-use std::fs::File;
-use std::env;
 use rayon::prelude::*;
+use pixel_canvas::{
+    Canvas, 
+    canvas::CanvasInfo, 
+    Color};
+use glium::glutin::event::{Event, WindowEvent, MouseButton, ElementState};
+use scarlet::colormap::{ColorMap, ListedColorMap};
+use scarlet::color::RGBColor;
+use rug::Float;
 
-fn main() {
-    let args: Vec<String> = env::args().collect();
-    
-    if args.len() != 5 {
-        eprintln!("Usage: {} <filename> <pixels> <upperleft> <lowerright>", args[0]);
-        eprintln!("Sample: {} mandel.png 1000x750 -1.20,0.35 -1.0,0.20", args[0]);
-    }
-
-    let bounds = parse_pair(&args[2], 'x').expect("Could not parse image size");
-    let upper_left = parse_complex(&args[3]).expect("Could not parse upper left complex type");
-    let lower_right = parse_complex(&args[4]).expect("Could not parse lower right complex type");    
-
-    let mut pixels = vec![0; bounds.0 * bounds.1 * 3];
-    {
-        let bands: Vec<(usize, &mut [u8])> = pixels
-            .chunks_mut(bounds.0 * 3)
-            .enumerate()
-            .collect();
-
-        bands.into_par_iter()
-            .for_each(|(i, band)| {
-                let top = i;
-                let band_bounds = (bounds.0, 1);
-                let band_upper_left = pixel_to_point(bounds, (0, top), upper_left, lower_right);
-                let band_lower_right = pixel_to_point(bounds, (bounds.0, top + 1), upper_left, lower_right);
-                render(band, band_bounds, band_upper_left, band_lower_right);
-            });        
-    }
-    write_image(&args[1], &pixels, bounds).expect("Error writing PNG file");
+/// Input structure to map mouse input into graphics canvas
+struct MandelbrotInteractiveMouse {
+    x: i32,
+    y: i32,
+    virtual_x: i32,
+    virtual_y: i32,
+    upper_left: Complex<f64>,
+    lower_right: Complex<f64>,
+    re_range: f64,
+    im_range: f64,
+    re_range_init: f64,
+    im_range_init: f64,
+    scaling: f64,
+    iterations: usize
 }
 
-fn write_image(filename: &str, pixels: &[u8], bounds: (usize, usize)) -> Result<(), std::io::Error> {
-    let output = File::create(filename)?;
-    let encoder = PNGEncoder::new(output);
-    encoder.encode(&pixels,
-                   bounds.0 as u32,
-                   bounds.1 as u32,
-                   ColorType::RGB(8))?;
-    Ok(())
+impl MandelbrotInteractiveMouse {
+    /// Creates a new mouse object
+    fn new(upper_left: Complex<f64>, lower_right: Complex<f64>, scaling: f64) -> Self {
+        Self {
+            x: 0,
+            y: 0,
+            virtual_x: 0,
+            virtual_y: 0,
+            upper_left,
+            lower_right,
+            re_range: lower_right.re - upper_left.re,
+            im_range: upper_left.im - lower_right.im,
+            re_range_init: lower_right.re - upper_left.re,
+            im_range_init: upper_left.im - lower_right.im,
+            scaling,
+            iterations: 0
+        }
+    }
+
+    /// Event handler for mouse input events
+    /// 
+    /// # Arguments
+    /// * `info` - Information about the current canvas
+    /// * `mouse` - Current mouse position data
+    /// * `event` - Event type to be handled, which contains different data depending on the event
+    pub fn handle_events(info: &CanvasInfo, mouse: &mut MandelbrotInteractiveMouse, event: &Event<()>) -> bool {
+        match event {
+            Event::WindowEvent{event: WindowEvent::MouseInput{state, button, ..}, ..} => {
+                match button {
+                    MouseButton::Left => {
+                        if *state == ElementState::Pressed {
+                            // interpolate new coordinates
+                            let x_new = (mouse.x as f64 / info.width as f64) * mouse.re_range + mouse.upper_left.re;
+                            let y_new = ((info.height as i32 - mouse.y) as f64 / info.height as f64) * mouse.im_range + mouse.lower_right.im;
+                            let center = Complex{re: x_new, im: y_new};
+                            mouse.upper_left = Complex{ re: center.re - (mouse.re_range / (2.0 * mouse.scaling)), im: center.im + (mouse.im_range / (2.0 * mouse.scaling))};
+                            mouse.lower_right = Complex{ re: center.re + (mouse.re_range / (2.0 * mouse.scaling)), im: center.im - (mouse.im_range / (2.0 * mouse.scaling))};
+                            mouse.iterations += 1;
+                            mouse.re_range = mouse.re_range_init / mouse.scaling.powf(mouse.iterations as f64);
+                            mouse.im_range = mouse.im_range_init / mouse.scaling.powf(mouse.iterations as f64);
+                            true
+                        } else {
+                            false
+                        }},
+                    _ => false
+                }
+            },
+            Event::WindowEvent{event: WindowEvent::CursorMoved{position, ..}, ..} => {
+                let (x, y): (i32, i32) = (*position).into();
+                mouse.virtual_x = x;
+                mouse.virtual_y = y;
+                mouse.x = (x as f64 * info.dpi) as i32;
+                mouse.y = ((info.height as i32 - y) as f64 * info.dpi) as i32;
+                false
+            }
+            _ => false,
+        }
+    }
+}
+
+struct ColorMapBuffer {
+    colors: Vec<(u8, u8, u8)>,
+}
+
+impl ColorMapBuffer {
+    fn from_cmap(size: usize, cmap: &ListedColorMap) -> Self {
+        let colors = (0..size).into_iter()
+        .map(|x| cmap.transform_single(x as f64 / size as f64))
+        .map(|x: RGBColor| ((x.r * 255 as f64) as u8, (x.g * 255 as f64) as u8, (x.b * 255 as f64) as u8))
+        .collect();
+        Self { colors }
+    }
+}
+
+
+fn main() {
+    let iterations = 500;
+    let cmap = ListedColorMap::viridis();
+    let bounds = (1024, 1024);
+    let cmap_buffer = ColorMapBuffer::from_cmap(iterations, &cmap);
+    let mut canvas = Canvas::new(bounds.0, bounds.1)
+        .title("Mandelbrot")
+        .show_ms(true)
+        .state(MandelbrotInteractiveMouse::new(Complex{re: -1.0, im: 1.0}, Complex{re: 1.0, im: -1.0}, 2.0))
+        .input(MandelbrotInteractiveMouse::handle_events);
+    canvas = canvas.render_on_change(true);
+    canvas.render(move |mandelbrot, image| {
+        let test: Float = Float::with_val(64, 1.05);
+        println!("{:?}", test);   
+        {
+            let bands: Vec<(usize, &mut [Color])> = image.pixels
+                .chunks_mut(bounds.0)
+                .enumerate()
+                .collect();
+    
+            bands.into_par_iter()
+                .for_each(|(i, band)| {
+                    let top = i;
+                    let band_bounds = (bounds.0, 1);
+                    let band_upper_left = pixel_to_point(bounds, (0, top), mandelbrot.upper_left, mandelbrot.lower_right);
+                    let band_lower_right = pixel_to_point(bounds, (bounds.0, top + 1), mandelbrot.upper_left, mandelbrot.lower_right);
+                    render(band, band_bounds, band_upper_left, band_lower_right, &cmap_buffer, iterations);
+                });        
+        }
+    });
 }
 
 fn escape_time(c: Complex<f64>, limit: usize) -> Option<usize> {
@@ -56,25 +141,6 @@ fn escape_time(c: Complex<f64>, limit: usize) -> Option<usize> {
         z = z * z + c;
     }
     None
-}
-
-fn parse_pair<T: FromStr>(s: &str, separator: char) -> Option<(T, T)> {
-    match s.find(separator) {
-        None => None,
-        Some(index) => {
-            match (T::from_str(&s[..index]), T::from_str(&s[index + 1..])) {
-                (Ok(l), Ok(r)) => Some((l, r)),
-                _ => None
-            }
-        }
-    }
-}
-
-fn parse_complex(s: &str) -> Option<Complex<f64>> {
-    match parse_pair(s, ',') {
-        Some((re, im)) => Some(Complex {re, im}),
-        None => None
-    }
 }
 
 fn pixel_to_point(bounds: (usize, usize),
@@ -90,55 +156,22 @@ fn pixel_to_point(bounds: (usize, usize),
     }
 }
 
-fn render(pixels: &mut[u8],
+fn render(pixels: &mut[Color],
           bounds: (usize, usize),
           upper_left: Complex<f64>,
-          lower_right: Complex<f64>) {
+          lower_right: Complex<f64>,
+          cmap: &ColorMapBuffer,
+          iterations: usize) {
     // Chunk should be rows * columns as RBG
-    assert_eq!(pixels.len(), bounds.0 * bounds.1 * 3);        
+    assert_eq!(pixels.len(), bounds.0 * bounds.1);        
     for row in 0..bounds.1 { 
         for column in 0..bounds.0 {
             let p = pixel_to_point(bounds, (column, row), upper_left, lower_right);
-            let color = match escape_time(p, 255) {
+            let color = match escape_time(p, iterations) {
                 None => (0, 0, 0),
-                Some(count) => escape_time_to_rgb(255 - count)
-            };           
-            pixels[row * bounds.0 + column * 3] = color.0;           
-            pixels[row * bounds.0 + column * 3 + 1] = color.1;
-            pixels[row * bounds.0 + column * 3 + 2] = color.2;
+                Some(count) => cmap.colors[count]
+            };
+            pixels[column] = Color{r: color.0, g: color.1, b: color.2};
         }
     }
-}
-
-
-fn escape_time_to_rgb(escape_time: usize) -> (u8, u8, u8) {
-    match escape_time as u32 / 51 {
-        0 => (0xe9, 0xd9, 0x85),
-        1 => (0xb2, 0xbd, 0x7e),
-        2 => (0x74, 0x9c, 0x75),
-        3 => (0x6a, 0x5d, 0x7b),
-        4 => (0x5d, 0x4a, 0x66),        
-        _ => (0xFF, 0xFF, 0xFF)
-    }    
-}
-
-
-
-#[test]
-fn test_parse_pair() {
-    assert_eq!(parse_pair::<i32>("10,20", ','), Some((10,20)));
-    assert_eq!(parse_pair::<i32>("", ','), None);
-}
-
-#[test]
-fn test_parse_complex() {
-    assert_eq!(parse_complex("1.25,-0.625"), Some(Complex{ re: 1.25, im: -0.625}));
-    assert_eq!(parse_complex(",-0.625"), None);
-}
-
-#[test]
-fn test_pixel_to_point() {
-    assert_eq!(pixel_to_point((100, 200), (25, 175),
-                              Complex { re: -1.0, im: 1.0 },
-                              Complex { re: 1.0, im: -1.0 }), Complex{ re: -0.5, im: -0.75 } );
 }

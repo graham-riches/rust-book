@@ -7,6 +7,10 @@ edition = "2018"
 
 [dependencies]
 num = "0.4"
-image = "0.13.0"
 crossbeam = "0.8"
 rayon = "1"
+pixel-canvas= {path = "pixel-canvas"}
+glium="*"
+scarlet="*"
+gmp-mpfr-sys = { version="1.4" }
+rug="*"

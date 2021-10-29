@@ -12,5 +12,3 @@ rayon = "1"
 pixel-canvas= {path = "pixel-canvas"}
 glium="*"
 scarlet="*"
-gmp-mpfr-sys = { version="1.4" }
-rug="*"

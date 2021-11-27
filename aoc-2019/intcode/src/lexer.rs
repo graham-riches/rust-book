@@ -1,7 +1,7 @@
 use crate::parameters::ParameterMode;
 
 /// Encodes a parameter as well as it's calling type
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct Parameter {
     pub mode: ParameterMode,
     pub value: i64

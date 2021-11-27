@@ -4,7 +4,7 @@ use crate::lexer;
 const OP_CODE_ID: i64 = 8;
 const INSTRUCTION_POINTER_OFFSET: i64 = 4;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Default)]
 pub struct Equals { 
     arg1: lexer::Parameter,
     arg2: lexer::Parameter,

@@ -2,20 +2,7 @@ pub mod instructions;
 pub mod lexer;
 pub mod parameters;
 
-use num_traits::FromPrimitive;
-
-use crate::instructions::{
-    op_code::{OpCode, OpCodeId},
-    add::Add,
-    multiply::Multiply,
-    input::Input, 
-    output::Output,
-    complete::Complete,
-    jump_if_true::JumpIfTrue,
-    jump_if_false::JumpIfFalse,
-    less_than::LessThan,
-    equals::Equals,
-};
+use crate::instructions::parse_from_slice;
 
 use std::{
     fs::File,
@@ -82,20 +69,8 @@ pub fn run_interpreter(v: &mut[i64], input: fn() -> i64, output: fn(i64) -> ()) 
             Some(i) => i,
             None    => return
         };
-
-        let op: Box<dyn OpCode> = match FromPrimitive::from_i64(instruction.op_code) {
-            Some(OpCodeId::Add)         => Box::new(Add::parse_from_slice(&v[ip..]).unwrap()),
-            Some(OpCodeId::Multiply)    => Box::new(Multiply::parse_from_slice(&v[ip..]).unwrap()),
-            Some(OpCodeId::Input)       => Box::new(Input::parse_from_slice(&v[ip..]).unwrap()),
-            Some(OpCodeId::Output)      => Box::new(Output::parse_from_slice(&v[ip..]).unwrap()),
-            Some(OpCodeId::JumpIfTrue)  => Box::new(JumpIfTrue::parse_from_slice(&v[ip..]).unwrap()),
-            Some(OpCodeId::JumpIfFalse) => Box::new(JumpIfFalse::parse_from_slice(&v[ip..]).unwrap()),
-            Some(OpCodeId::LessThan)    => Box::new(LessThan::parse_from_slice(&v[ip..]).unwrap()),
-            Some(OpCodeId::Equals)      => Box::new(Equals::parse_from_slice(&v[ip..]).unwrap()),
-            Some(OpCodeId::Complete)    => Box::new(Complete::parse_from_slice(&v[ip..]).unwrap()),
-            None => return
-        };
-
+        // TODO: probably remove the unwrap here
+        let op = parse_from_slice(instruction, &v[ip..]).unwrap();
         ip = op.apply(&mut v[..], ip as i64, input, output) as usize;
     }
 }

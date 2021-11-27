@@ -6,3 +6,9 @@ pub enum ParameterMode {
     Immediate = 1,
 }
 
+impl Default for ParameterMode {
+    fn default() -> Self {
+        Self::Position
+    }
+}
+

@@ -6,7 +6,7 @@ use crate::parameters::ParameterMode;
 const OP_CODE_ID: i64 = 3;
 const INSTRUCTION_POINTER_OFFSET: i64 = 2;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Default)]
 pub struct Input { 
     arg: lexer::Parameter
 }

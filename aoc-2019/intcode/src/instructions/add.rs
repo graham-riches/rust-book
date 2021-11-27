@@ -1,6 +1,8 @@
-use crate::int_code::instructions::op_code::OpCode;
-use crate::int_code::lexer;
-use crate::int_code::parameters::ParameterMode;
+use crate::instructions::op_code::OpCode;
+use crate::lexer;
+#[allow(unused_imports)]
+use crate::parameters::ParameterMode;
+
 
 const OP_CODE_ID: i64 = 1;
 const INSTRUCTION_POINTER_OFFSET: i64 = 4;
@@ -39,12 +41,12 @@ impl OpCode for Add {
     }
 
     /// Gets the instruction pointer offset for an add
-    fn get_instruction_pointer_offset() -> i64 {
+    fn get_instruction_pointer_offset(&self) -> i64 {
         INSTRUCTION_POINTER_OFFSET
     }
 
     /// Gets the operation code
-    fn get_op_code() -> i64 {
+    fn get_op_code(&self) -> i64 {
         OP_CODE_ID
     }
 }

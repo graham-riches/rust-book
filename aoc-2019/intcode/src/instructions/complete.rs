@@ -1,5 +1,5 @@
-use crate::int_code::instructions::op_code::OpCode;
-use crate::int_code::lexer;
+use crate::instructions::op_code::OpCode;
+use crate::lexer;
 
 const OP_CODE_ID: i64 = 99;
 const INSTRUCTION_POINTER_OFFSET: i64 = 1;
@@ -23,12 +23,12 @@ impl OpCode for Complete {
     }
 
     /// Gets the instruction pointer offset for a complete
-    fn get_instruction_pointer_offset() -> i64 {
+    fn get_instruction_pointer_offset(&self) -> i64 {
         INSTRUCTION_POINTER_OFFSET
     }
 
     /// Gets the operation code
-    fn get_op_code() -> i64 {
+    fn get_op_code(&self) -> i64 {
         OP_CODE_ID
     }
 }

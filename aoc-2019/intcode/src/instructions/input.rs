@@ -1,6 +1,7 @@
-use crate::int_code::instructions::op_code::OpCode;
-use crate::int_code::lexer;
-use crate::int_code::parameters::ParameterMode;
+use crate::instructions::op_code::OpCode;
+use crate::lexer;
+#[allow(unused_imports)]
+use crate::parameters::ParameterMode;
 
 const OP_CODE_ID: i64 = 3;
 const INSTRUCTION_POINTER_OFFSET: i64 = 2;
@@ -24,18 +25,18 @@ impl OpCode for Input {
 
     /// Applies an input operation on a program
     fn apply(&self, program: &mut [i64], instruction_pointer: i64, input: fn() -> i64, _output: fn(i64) -> ()) -> i64 {
-        let output = lexer::get_parameter_value(&self.arg, &program);        
+        lexer::get_parameter_value(&self.arg, &program);        
         program[self.arg.value as usize] = input();
         instruction_pointer + INSTRUCTION_POINTER_OFFSET
     }
 
     /// Gets the instruction pointer offset for a complete
-    fn get_instruction_pointer_offset() -> i64 {
+    fn get_instruction_pointer_offset(&self) -> i64 {
         INSTRUCTION_POINTER_OFFSET
     }
 
     /// Gets the operation code
-    fn get_op_code() -> i64 {
+    fn get_op_code(&self) -> i64 {
         OP_CODE_ID
     }
 }

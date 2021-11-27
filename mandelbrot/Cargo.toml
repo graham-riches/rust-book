@@ -9,6 +9,6 @@ edition = "2018"
 num = "0.4"
 crossbeam = "0.8"
 rayon = "1"
-pixel-canvas= {path = "pixel-canvas"}
+pixel-canvas= {git = "https://github.com/graham-riches/pixel-canvas.git", branch = "develop" }
 glium="*"
 scarlet="*"

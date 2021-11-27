@@ -1,4 +1,4 @@
-use crate::int_code::parameters::ParameterMode;
+use crate::parameters::ParameterMode;
 
 /// Encodes a parameter as well as it's calling type
 #[derive(Debug, PartialEq)]
@@ -7,7 +7,7 @@ pub struct Parameter {
     pub value: i64
 }
 
-/// Encodes an int_code instruction and it's parameter passing modes
+/// Encodes an intcode instruction and it's parameter passing modes
 #[derive(Debug, PartialEq)]
 pub struct InstructionType {
     pub op_code: i64,
@@ -23,7 +23,7 @@ pub struct InstructionType {
 /// must specifically reduce this to what it requires as necessary
 /// 
 /// # Examples
-/// ```
+/// ```ignore
 /// let instruction = match parse_instruction_type(1002);
 /// // instruction = Some(2, Position, Immediate, Position)
 /// ```
@@ -45,7 +45,7 @@ pub fn parse_instruction_type(instruction: i64) -> Option<InstructionType> {
 /// Gets the actual value of a parameter depending on the parameter mode
 /// 
 /// # Examples
-/// ```
+/// ```ignore
 /// assert_eq!(get_parameter_value( Parameter{ mode: ParameterMode::Position, value: 3}, &vec![10, 20, 30, 40]), 40);
 /// assert_eq!(get_parameter_value( Parameter{ mode: ParameterMode::Immediate, value: 3}, &vec![10, 20, 30, 40]), 3);
 /// ```
